@@ -1,0 +1,11 @@
+{
+  "id": "uth",
+  "name": "Uth",
+  "repo": "its-ash/uth",
+  "package": "com.itsash.uth",
+  "tagline": "An alarm clock you cannot switch off half asleep. Solve math, shake, scan a code or retype a sentence.",
+  "description": "Uth is an alarm clock that makes you wake up. Set alarms with repeat days, a label, any alarm sound, vibration and a volume that rises slowly. To switch an alarm off you must finish a challenge: solve math problems (easy, medium or hard), shake the phone, scan a QR code or barcode you stuck somewhere you have to walk to, like the bathroom, or retype a sentence. Snoozes are limited per alarm. Alarms ring on time even when the phone is locked or restarted, and the ring screen opens over the lock screen. Test any alarm with one tap, and see how long until the next one on the home screen. Works fully offline, no account.",
+  "category": "Tools",
+  "icon": "assets/icon/logo-1024.png",
+  "homepage": "https://uth.itsash.in/"
+}
