@@ -38,6 +38,7 @@ class AlarmService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        ensureChannels(this)
         val json = intent?.getStringExtra(EXTRA_JSON)
         val test = intent?.getBooleanExtra(EXTRA_TEST, false) ?: false
         val parsed = try {
@@ -46,17 +47,17 @@ class AlarmService : Service() {
             null
         }
         if (json == null || parsed == null) {
+            val minimal = Notification.Builder(this, CHANNEL_ALARM)
+                .setSmallIcon(R.drawable.ic_stat_alarm)
+                .setContentTitle("Alarm")
+                .build()
+            startForegroundWithType(minimal)
             stopSelf()
             return START_NOT_STICKY
         }
         alarm = parsed
-        ensureChannels(this)
         val notification = buildNotification(parsed, json, test)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
+        startForegroundWithType(notification)
         ringing = true
         acquireWakeLock()
         stopSound()
@@ -70,6 +71,14 @@ class AlarmService : Service() {
         } catch (_: Exception) {
         }
         return START_NOT_STICKY
+    }
+
+    private fun startForegroundWithType(notification: Notification) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
     }
 
     private fun buildNotification(a: Alarm, json: String, test: Boolean): Notification {
@@ -122,8 +131,9 @@ class AlarmService : Service() {
             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
             .build()
         for (uri in candidates(a.sound)) {
+            var p: MediaPlayer? = null
             try {
-                val p = MediaPlayer()
+                p = MediaPlayer()
                 p.setAudioAttributes(attrs)
                 p.setDataSource(this, uri)
                 p.isLooping = true
@@ -134,6 +144,7 @@ class AlarmService : Service() {
                 player = p
                 break
             } catch (_: Exception) {
+                runCatching { p?.release() }
                 // Missing or unreadable ringtone: try the next candidate.
             }
         }
@@ -223,6 +234,12 @@ class AlarmService : Service() {
                 .putExtra(EXTRA_TEST, test)
 
         fun start(context: Context, json: String, test: Boolean) {
+            if (json.isBlank()) return
+            try {
+                Alarm.fromJson(JSONObject(json))
+            } catch (_: Exception) {
+                return
+            }
             context.startForegroundService(
                 Intent(context, AlarmService::class.java).putExtra(EXTRA_JSON, json).putExtra(EXTRA_TEST, test),
             )

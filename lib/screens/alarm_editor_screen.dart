@@ -32,7 +32,7 @@ class _AlarmEditorScreenState extends State<AlarmEditorScreen> {
 
   Future<void> _pickSound() async {
     final picked = await widget.store.platform.pickRingtone(current: _draft.sound);
-    if (picked == null) return;
+    if (!mounted || picked == null) return;
     _set(_draft.copyWith(sound: picked.uri, soundTitle: picked.title));
   }
 
@@ -40,7 +40,7 @@ class _AlarmEditorScreenState extends State<AlarmEditorScreen> {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute<String>(builder: (_) => const QrScanPage(title: 'Scan the code to register')),
     );
-    if (code == null) return;
+    if (!mounted || code == null) return;
     setState(() => _qrError = null);
     _set(_draft.copyWith(qrCode: code));
   }

@@ -6,12 +6,15 @@ import android.os.Bundle
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 /**
  * The ring screen: a Flutter activity that starts on the "/ring" route and shows over the lock screen.
  * The alarm JSON arrives as an intent extra ([AlarmService.EXTRA_JSON]); Dart reads it with `ringInfo`.
  */
 class RingActivity : FlutterActivity() {
+
+    private var channel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
@@ -31,11 +34,12 @@ class RingActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        UthChannel.install(this, flutterEngine.dartExecutor.binaryMessenger)
+        channel = UthChannel.install(this, flutterEngine.dartExecutor.binaryMessenger)
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        channel?.invokeMethod("ringUpdated", null)
     }
 }

@@ -33,9 +33,10 @@ object UthChannel {
         activity: Activity,
         messenger: BinaryMessenger,
         extra: (MethodCall, MethodChannel.Result) -> Boolean = { _, _ -> false },
-    ) {
+    ): MethodChannel {
         val store = AlarmStore(activity)
-        MethodChannel(messenger, NAME).setMethodCallHandler { call, result ->
+        val channel = MethodChannel(messenger, NAME)
+        channel.setMethodCallHandler { call, result ->
             try {
                 when (call.method) {
                     "getAlarms" -> result.success(store.alarmsJson)
@@ -113,6 +114,7 @@ object UthChannel {
                 result.error("failed", e.message, null)
             }
         }
+        return channel
     }
 
     private fun notificationsAllowed(activity: Activity): Boolean =

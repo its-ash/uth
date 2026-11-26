@@ -65,6 +65,7 @@ abstract interface class AlarmPlatform {
 
   /// For the ring screen.
   Future<RingInfo?> ringInfo();
+  void setOnRingUpdated(void Function()? onUpdated);
   Future<void> dismiss(Alarm alarm, {required bool test});
   Future<void> snooze(Alarm alarm, {required bool test});
 }
@@ -125,6 +126,17 @@ class ChannelAlarmPlatform implements AlarmPlatform {
       test: map['test'] as bool? ?? false,
       snoozesUsed: (map['snoozesUsed'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  @override
+  void setOnRingUpdated(void Function()? onUpdated) {
+    if (onUpdated == null) {
+      _channel.setMethodCallHandler(null);
+    } else {
+      _channel.setMethodCallHandler((call) async {
+        if (call.method == 'ringUpdated') onUpdated();
+      });
+    }
   }
 
   @override

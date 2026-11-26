@@ -25,6 +25,7 @@ class _RingScreenState extends State<RingScreen> {
   bool _loaded = false;
   bool _mathFallback = false;
   bool _busy = false;
+  int _loadGen = 0;
   DateTime _now = DateTime.now();
   Timer? _tick;
 
@@ -32,18 +33,25 @@ class _RingScreenState extends State<RingScreen> {
   void initState() {
     super.initState();
     _tick = Timer.periodic(const Duration(seconds: 1), (_) => setState(() => _now = DateTime.now()));
-    widget.platform.ringInfo().then((info) {
-      if (mounted) {
-        setState(() {
-          _info = info;
-          _loaded = true;
-        });
-      }
+    widget.platform.setOnRingUpdated(_loadInfo);
+    _loadInfo();
+  }
+
+  Future<void> _loadInfo() async {
+    final gen = ++_loadGen;
+    final info = await widget.platform.ringInfo();
+    if (!mounted || gen != _loadGen) return;
+    setState(() {
+      _info = info;
+      _loaded = true;
+      _mathFallback = false;
+      _busy = false;
     });
   }
 
   @override
   void dispose() {
+    widget.platform.setOnRingUpdated(null);
     _tick?.cancel();
     super.dispose();
   }
@@ -52,14 +60,22 @@ class _RingScreenState extends State<RingScreen> {
     final info = _info;
     if (info == null || _busy) return;
     _busy = true;
-    await widget.platform.dismiss(info.alarm, test: info.test);
+    try {
+      await widget.platform.dismiss(info.alarm, test: info.test);
+    } catch (_) {
+      if (mounted) _busy = false;
+    }
   }
 
   Future<void> _snooze() async {
     final info = _info;
     if (info == null || _busy) return;
     _busy = true;
-    await widget.platform.snooze(info.alarm, test: info.test);
+    try {
+      await widget.platform.snooze(info.alarm, test: info.test);
+    } catch (_) {
+      if (mounted) _busy = false;
+    }
   }
 
   String get _clock =>
@@ -88,7 +104,7 @@ class _RingScreenState extends State<RingScreen> {
                     style: context.text.headlineSmall,
                   ),
                   const SizedBox(height: UiSpace.md),
-                  _challenge(info),
+                  KeyedSubtree(key: ValueKey(_loadGen), child: _challenge(info)),
                   const SizedBox(height: UiSpace.lg),
                   ..._footer(info),
                 ],
